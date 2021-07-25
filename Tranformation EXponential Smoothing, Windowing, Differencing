@@ -1,0 +1,78 @@
+ow = pd.read_csv('DJIA.csv', parse_dates=['DATE'], na_values='.').dropna()
+Dow.plot(x='DATE', legend=False)
+ax = plt.gca()
+ax.set_ylabel('Dow')
+ax.set_xlabel('Date')
+plt.show()
+
+def differentiate(values, d=1):
+    # First value is required so that we can recover the original values with np.cumsum
+    x = np.concatenate([[values[0]], values[1:]-values[:-1]])
+
+    if d == 1:
+        return x
+    else:
+        return difference(x, d - 1)
+
+values = Dow['DJIA'].values
+differences = differentiate(values)
+plt.plot(Dow['DATE'].iloc[1:], differences[1:])
+plt.xlabel('Date')
+plt.ylabel('Differences')
+plt.show()
+
+# Recover by integrating
+def integrate(values, d=1):
+    x = np.cumsum(values)
+
+    if d == 1:
+        return x
+    else:
+        return integrate(x, d - 1)
+
+reb = integrate(differences)
+
+# Resampling
+mapping = Dow['DATE'].dt.year
+values = Dow['DJIA'].values
+
+
+def groupBy(values, mapping, func=None):
+    agg = {}
+    pos = {}
+
+    for i in range(values.shape[0]):
+        key = mapping.iloc[i]
+
+        if key not in agg:
+            agg[key] = []
+
+        pos[key] = i
+
+        if not np.isnan(values[i]):
+            agg[key].append(values[i])
+
+    order = sorted(agg.keys())
+
+    if func is not None:
+        for key in agg:
+            agg[key] = func(np.array(agg[key]).astype('float'))
+
+    return agg, pos
+#roupBy function is useful not only for resampling but also for wide range of statistical analysis. In addition to a mapping, we must also specify what aggregation function we want to use. Are we interested in the average value? the maximum? standard deviation?
+agg, pos = groupBy(values, mapping, np.mean)
+
+aggregated = []
+
+for key in pos:
+    aggregated.append([pos[key], agg[key]])
+
+aggregated = np.array(aggregated)
+
+plt.plot(Dow['DATE'], Dow['DJIA'])
+ax = plt.gca()
+ax.plot(Dow.set_index('DATE').index[aggregated.T[0].astype('int')], aggregated.T[1])
+ax.plot(Dow.set_index('DATE').index[aggregated.T[0].astype('int')], aggregated.T[1], 'ro', markersize=10,)
+ax.set_ylabel('DJIA')
+ax.set_xlabel('Date')
+plt.show()
