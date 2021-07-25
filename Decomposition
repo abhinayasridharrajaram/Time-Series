@@ -1,0 +1,82 @@
+# Airline
+airline = pd.read_csv('international-airline-passengers.csv', sep=';')
+airline['Month'] = pd.to_datetime(airline['Month']+'-01')
+airline.set_index('Month', inplace=True)
+print(airline.head())
+airline.plot(legend=False)
+ax = plt.gca()
+ax.set_xlabel('Date')
+ax.set_ylabel('Passengers')
+plt.show()
+
+
+def running_average(x, order):
+    current = x[:order].sum()
+    running_avg = []
+
+    for i in range(order, x.shape[0]):
+        current += x[i]
+        current -= x[i - order]
+        running_avg.append(current / order)
+
+    return np.array(running_avg)
+trend = running_average(airline['Passengers'], 12)
+
+fig, ax = plt.subplots(1, 1)
+ax.plot(airline.index, airline['Passengers'])
+ax.set_xlabel('Date')
+ax.set_ylabel('Passengers')
+ax.plot(airline.index[12:], trend, label='Trend')
+ax.legend()
+plt.show()
+
+# Remove trend
+Removetrend = airline.iloc[12:].values.flatten()/trend
+
+Removetrend = airline.iloc[12:].values.flatten()/trend
+fig, ax = plt.subplots(1, 1)
+ax.plot(airline.index[12:], Removetrend)
+ax.set_xlabel('Date')
+ax.set_ylabel(' Remove trended value')
+plt.show()
+
+# Seasonal
+#### Seasonal
+#seasonal pattern analysis using seasonal subplots
+
+def plot_seasons(Removetrend, order, plot_mean=True):
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+    N = len(Removetrend)
+
+    data = np.array([Removetrend[i::order] for i in range(order)])
+
+    means = np.mean(data, axis=1)
+    medians = np.median(data, axis=1)
+
+    counts = [0]
+    counts.extend([len(data[i]) for i in range(order)])
+    counts = np.cumsum(counts)
+
+    ticks = (counts[:-1] + counts[1] / 2)
+
+    for i in range(order):
+        values = data[i, :]
+        npoints = len(values)
+
+        plt.plot(range(counts[i], counts[i + 1]), values, c=colors[0])
+        plt.plot(range(counts[i], counts[i + 1]), np.ones(npoints) * means[i], c=colors[1])
+        plt.plot(range(counts[i], counts[i + 1]), np.ones(npoints) * medians[i], c=colors[2])
+
+    plt.legend(['data', 'mean', 'median'])
+    plt.xlabel('season')
+    plt.ylabel('values')
+    plt.xticks(ticks, np.arange(order));
+
+    if plot_mean:
+        plt.plot(ticks, means, c=colors[3])
+
+    return means
+
+means = plot_seasons(Removetrend, 12)
+
