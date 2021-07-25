@@ -1,0 +1,88 @@
+
+import pandas as pd
+import scipy.stats as stats
+from collections import Counter
+from matplotlib import pyplot
+from imblearn.over_sampling import SMOTE
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import r2_score, classification_report, confusion_matrix, accuracy_score, roc_auc_score, roc_curve, precision_recall_curve, average_precision_score
+from sklearn.metrics import homogeneity_score, silhouette_score
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.preprocessing import MinMaxScaler
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestClassifier
+from tabulate import tabulate
+from matplotlib.dates import DateFormatter, DayLocator
+import statsmodels.api as sm
+import seaborn as sns
+from datetime import datetime
+# Import statsmodel
+from scipy import stats
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from statsmodels.tsa.stattools import adfuller
+# Import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import train_test_split,StratifiedShuffleSplit, StratifiedKFold
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import LabelEncoder
+# Set some parameters to get good visuals - style to ggplot and size to 15,10
+plt.style.use('ggplot')
+#plt.rcParams['figure.figsize'] = (15, 10)
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from pandas_profiling import ProfileReport
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_classification
+from pandas import DataFrame
+from pandas import Series
+import pymannkendall as mk
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+from pandas import DataFrame
+
+import matplotlib
+import matplotlib.pyplot as plt
+
+import numpy as np
+import pandas as pd
+GDP = pd.read_csv('GDP.csv', parse_dates=['DATE'])
+GDP.set_index('DATE', inplace=True)
+print(GDP.head())
+ax = GDP['2009':].plot(legend=False)
+ax.set_ylabel(r'GDP ($B$)')
+plt.show()
+#percentage of deaths attributed to Influenza and Pneumonia in the past 8 years SEASONAL
+Infl = pd.read_csv('CDC.csv')
+print(Infl.head())
+# Adding date
+Infl['date'] = Infl['Year']+Infl['Week']/52.
+Infl.plot(x='date', y=['Percent of Deaths Due to Pneumonia and Influenza', 'Expected', 'Threshold'])
+ax = plt.gca()
+ax.legend(['Mortality', 'Expected', 'Threshold'])
+ax.set_xlabel('Date')
+ax.set_ylabel('% Mortality')
+plt.show()
+#
+S = pd.read_csv('sun.csv')
+print(S.head())
+S.plot(x='YEAR', y='SUNACTIVITY', legend=False)
+ax = plt.gca()
+ax.set_ylabel('Sun activity')
+ax.set_xlabel('Year')
+plt.show()
