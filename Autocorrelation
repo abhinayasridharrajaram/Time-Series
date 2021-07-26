@@ -1,0 +1,14 @@
+GDP = pd.read_csv('GDP.csv', parse_dates=['DATE'])
+GDP.set_index('DATE', inplace=True)
+ax=GDP.plot(legend=False)
+ax.set_ylabel(r'GDP in Billions')
+values = GDP['GDP'].values
+Removetrend = values[1:]-values[:-1]
+from statsmodels.graphics import tsaplots
+tsaplots.plot_acf(values)
+plt.show()
+plt.plot(GDP.index[1:], Removetrend)
+plt.xlabel('DATE')
+plt.ylabel(r'Q Change In Billions')
+tsaplots.plot_acf(Removetrend)
+plt.show()
