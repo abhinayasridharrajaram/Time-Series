@@ -1,0 +1,47 @@
+from sktime.datasets import load_airline
+from sktime.forecasting.arima import ARIMA, AutoARIMA
+from sktime.forecasting.base import ForecastingHorizon
+from sktime.forecasting.compose import (
+    EnsembleForecaster,
+    MultiplexForecaster,
+    TransformedTargetForecaster,
+    make_reduction,
+)
+from sktime.forecasting.exp_smoothing import ExponentialSmoothing
+from sktime.forecasting.model_evaluation import evaluate
+from sktime.forecasting.model_selection import (
+    ExpandingWindowSplitter,
+    ForecastingGridSearchCV,
+    SlidingWindowSplitter,
+    temporal_train_test_split,
+)
+from sktime.forecasting.naive import NaiveForecaster
+from sktime.forecasting.theta import ThetaForecaster
+from sktime.forecasting.trend import PolynomialTrendForecaster
+from sktime.performance_metrics.forecasting import (
+    MeanAbsolutePercentageError,
+    mean_absolute_percentage_error,
+)
+from sktime.transformations.series.detrend import Deseasonalizer, Detrender
+from sktime.utils.plotting import plot_series
+from sktime.datasets import load_airline
+from sktime.forecasting.model_selection import temporal_train_test_split
+# from sktime.utils.plotting.forecasting import plot_ys
+y = load_airline()
+y_train, y_test = temporal_train_test_split(y)
+plt.title('Airline Data with Train and Test')
+y_train.plot(label = 'train')
+y_test.plot(label = 'test')
+plt.legend()
+from sktime.forecasting.arima import AutoARIMA
+forecaster = AutoARIMA(sp=12)
+forecaster.fit(y_train)
+#Prediction
+fh = np.arange(1, 37)
+y_pred = forecaster.predict(fh)
+#Test and Prediction Plotting
+plt.title('Airline Data with Train, Test, and Prediction')
+y_train.plot(label = 'train')
+y_test.plot(label = 'test')
+y_pred.plot(label = 'prediction')
+plt.legend()
