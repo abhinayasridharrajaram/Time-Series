@@ -1,0 +1,173 @@
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+import math
+import smtplib
+
+from datetime import datetime
+from email.message import EmailMessage
+from sklearn.metrics import mean_squared_error
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.graphics.tsaplots import plot_pacf
+
+# load the dataset and the necessary data structure
+time_series = pd.read_csv('monthly_milk_production.csv', sep=',', parse_dates=['Date'], index_col='Date')
+target_col = time_series.columns[0]
+lower_bound = 'lower ' + target_col
+upper_bound = 'upper ' + target_col
+print('The target is:', target_col)
+print('The forecast boundary columns are:', lower_bound, '&', upper_bound)
+print(time_series.head(5))
+# Create the random seed number for reproducible results
+seedNum = 888
+#Summary Statistics of the Time Series Data
+print(time_series.describe())
+
+
+# LHistrogram of time series
+fig, ax = plt.subplots(figsize=(6,3))
+fig.suptitle('Histogram')
+time_series.hist(ax=ax)
+plt.show()
+# boxplots of time series
+fig, ax = plt.subplots(figsize=(12,10))
+squeezed = time_series.squeeze()
+sns.boxplot(squeezed.index.year, squeezed, ax=ax)
+plt.show()
+#Decompose
+decomp = seasonal_decompose(time_series, freq= 12)
+decomp.plot()
+plt.show()
+# Seasonal
+time_series['year'] = time_series.index.year
+time_series['month'] = time_series.index.month
+df_pivot = pd.pivot_table(time_series, values='Production', index='month', columns='year', aggfunc='mean')
+df_pivot.plot(figsize=(12,8))
+plt.legend().remove()
+plt.xlabel('Month')
+plt.ylabel('Milk Production')
+plt.show()
+time_series.drop(['year', 'month'], axis=1, inplace=True)
+fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(14,6), sharex=False, sharey=False)
+ax1 = plot_acf(time_series, lags=50, ax=ax1)
+ax2 = plot_pacf(time_series, lags=50, ax=ax2)
+plt.show()
+
+# Check for stationarity
+#Determing rolling statistics
+rolmean = pd.Series(time_series['Production']).rolling(window=12).mean()
+rolstd = pd.Series(time_series['Production']).rolling(window=12).std()
+
+#Plot rolling statistics:
+orig = plt.plot(time_series['Production'], color='blue',label='Original')
+mean = plt.plot(rolmean, color='red', label='Rolling Mean')
+std = plt.plot(rolstd, color='black', label = 'Rolling Std')
+plt.legend(loc='best')
+plt.title('Rolling Mean & Standard Deviation')
+plt.show
+result = adfuller(time_series[target_col])
+print('ADF Statistic: %f' % result[0])
+print('p-value: %f' % result[1])
+print('Critical Test Statistics Values:')
+for key, value in result[4].items():
+    print('\t%s: %.3f' % (key, value))
+
+time_series_diff = time_series.diff().diff(12)
+time_series_diff.dropna(inplace=True)
+
+# Plot differenced data
+fig, ax = plt.subplots(figsize=(12,9))
+fig.suptitle('Line Plot of the Stationary Seasonal Time Series Data')
+time_series_diff.plot(ax=ax)
+plt.show()
+# Dicket test on stationary data
+result = adfuller(time_series_diff[target_col])
+print('ADF Statistic: %f' % result[0])
+print('p-value: %f' % result[1])
+print('Critical Test Statistics Values:')
+for key, value in result[4].items():
+    print('\t%s: %.3f' % (key, value))
+
+#Autocorrelation plots once more
+fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(14,6), sharex=False, sharey=False)
+ax1 = plot_acf(time_series_diff, lags=50, ax=ax1)
+ax2 = plot_pacf(time_series_diff, lags=50, ax=ax2)
+plt.savefig('acfpacf2')
+plt.show()
+import pmdarima as pm
+import pmdarima as pm
+model = pm.auto_arima(time_series['Production'], d=1, D=1,seasonal=True, m=12, trend='c',start_p=0, start_q=0, max_order=6, test='adf', stepwise=True, trace=True)
+print(model.summary())
+#divide into train and validation set
+train = time_series[:int(0.85*(len(time_series)))]
+test = time_series[int(0.85*(len(time_series))):]
+
+#plotting the data
+train['Production'].plot()
+test['Production'].plot()
+plt.show()
+
+model = SARIMAX(train['Production'],order=(1,1,0),seasonal_order=(0,1,1,12))
+results = model.fit()
+print("Results of SARIMAX on train")
+print(results.summary())
+#Model Validation
+results.plot_diagnostics(figsize=(16, 8))
+plt.savefig('modeldiagnostics')
+plt.show()
+#Checking prediction value with test
+forecast = results.get_forecast(steps=len(test))
+mean = forecast.predicted_mean
+conf_int = forecast.conf_int()
+d = mean.index
+plt.figure(figsize=(8,5))
+# Plot past  levels
+plt.plot(time_series.index, time_series, label='Oiginal', color = 'red')
+# Prediction Mean
+plt.plot(d, mean, label='Forecasted', color= 'green')
+# Shade of space between  confidence intervals
+plt.fill_between(d, conf_int.iloc[:,0], conf_int.iloc[:,1],
+alpha=0.2, color= 'blue')
+# Plot legend
+plt.legend()
+plt.savefig('p')
+plt.show()
+################################################################################
+start=len(train)
+end=len(train)+len(test)-1
+predictions = results.predict(start=start, end=end, dynamic=False, typ='levels').rename('SARIMA Predictions')
+from sklearn.metrics import r2_score
+# Compare predictions to expected values
+for i in range(len(predictions)):
+    print(f"predicted={predictions[i]:<11.10}, expected={test['Production'][i]}")
+# Plot predictions against known values of test data
+title = 'Monthly Milk Produce'
+ax = test['Production'].plot(legend=True,figsize=(12,6),title=title)
+predictions.plot(legend=True)
+ax.autoscale(axis='x',tight=True)
+plt.show()
+#ax.set(xlabel=xlabel, ylabel=ylabel);
+#Print Stats on Test data
+from sklearn.metrics import r2_score
+print('R2score is',r2_score(test['Production'], predictions))
+mean_absolute_percentage_error = np.mean(np.abs(predictions - test['Production'])/np.abs(test['Production']))*100
+print('MAPE is', mean_absolute_percentage_error)
+
+#Future Forecast
+future = results.get_forecast(steps=48 )
+ci = future.conf_int()
+ax = time_series.plot(label='Production', figsize=(6, 4))
+future.predicted_mean.plot(ax=ax, label='Forecast')
+ax.fill_between(ci.index,
+                ci.iloc[:, 0],
+                ci.iloc[:, 1], color='y', alpha=.25)
+ax.set_xlabel('Date')
+ax.set_ylabel('Monthly Milk Produce')
+plt.legend()
+plt.show()
